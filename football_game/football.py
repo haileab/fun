@@ -46,37 +46,34 @@ class Football():
 
         self.ls += gained_yards
 
-        if self.ls >= 100:
+        if self.ls >= 100: #touchdown scored at 100 yards
             self.touchdown()
         else:
-            if self.ls > self.first_marker:
+            if self.ls > self.first_marker: #team has gotten a first down
                 self.down = 0
                 self.first_marker = self.ls + 10
                 if play_call == 'r':
                     print("First Down!!! What a run!")
-
                 else:
                     print("First Down!!! What a catch!")
+            self.down += 1 #team didn't get a first down, increased the down
 
-            self.down += 1
             if self.down < 4:
                 self.call_play()
-            else:
+            else: #it's forth down the team will either punt or kick a field goal
                 if self.ls > 65:
                     self.field_goal()
                 else:
                     self.punt()
-                    if self.posession == self.home:
-                        self.posession = self.away
-                    else:
-                        self.posession = self.home
 
     def _run(self):
         """
         Returns the result of a run play. Using a normal distribution for the run result.
         """
         print('{} call a run play'.format(self.posession))
-        gained_yards = int(np.random.normal(3.5,3))
+        gained_yards = int(np.random.normal(4,4))
+        if self.ls + gained_yards > 100:
+            gained_yards = 100 - self.ls
         print(f"A run for {gained_yards} yards.")
         return gained_yards
 
@@ -86,7 +83,8 @@ class Football():
         comp_determinant = np.random.random()
         if comp_determinant <= .65: #pass completed
             pass_complete = True
-            gained_yards = int(np.random.beta(1.8,10) * (100 - self.ls + 10))
+            beta = 10/(1 + self.ls/100)
+            gained_yards = int(np.random.beta(1.8,beta) * (100 - self.ls + 10))
             if self.ls + gained_yards > 100:
                 gained_yards = 100 - self.ls
         else: #pass incomplete
@@ -99,16 +97,18 @@ class Football():
         return gained_yards
 
     def coin_toss(self):
+        """Coin toss to start the game.
+        """
         coin = random.choice(['heads','tails'])
         away_choice = random.choice(['heads','tails'])
 
-        #winning team prefers to kick-off.
+        #winning team receives
         if away_choice == coin:
-            print("{0} choose {1}. The coin flip is {2}. The {0} have chosen to kickoff.".format(self.away, away_choice, coin))
-            self.kickoff(self.away, self.home)
-        else:
-            print("{0} choose {1}. The coin flip is {2}. The {3} have chosen to kickoff.".format(self.away, away_choice, coin, self.home))
+            print("{0} choose {1}. The coin flip is {2}. The {0} have chosen to receive.".format(self.away, away_choice, coin))
             self.kickoff(self.home, self.away)
+        else:
+            print("{0} choose {1}. The coin flip is {2}. The {3} have chosen to receive.".format(self.away, away_choice, coin, self.home))
+            self.kickoff(self.away, self.home)
 
     def kickoff(self,kicking_off, returning):
 
@@ -136,7 +136,7 @@ class Football():
 
     def punt(self):
         """
-        Used when team punts to the other team. Using average of 45 and std of 5.
+        Used when team punts to the other team. Using average of 45 and std of 5. For now there's no punt return.
         """
         punt_yards = int(np.random.normal(45,5))
         #if the punt ends up in the endzone it is a touchback and team gets the ball at the 20 yard line.
@@ -151,15 +151,6 @@ class Football():
         print(f"{punting_team} punt the ball for {punt_yards} yards.")
         self.call_play()
 
-    def fumble(self):
-        pass
-
-    def sack(self):
-        pass
-
-    def interception(self):
-        pass
-
     def touchdown(self):
         """Updates score for a touchdown and sets up kickoff.
         """
@@ -167,7 +158,7 @@ class Football():
 
         #updating score, no PAT for now
         self.update_score('touchdown')
-        self.e('PAT') #point after
+        self.update_score('PAT') #point after
         self.score_board()
 
         #setting up kickoff
@@ -190,7 +181,22 @@ class Football():
         '''
         Adds three points to the team with the ball. It is a given for now.
         '''
-        print(f"\nThe {self.posession} make the {100 - self.ls} yard field goal and score three points")
+        print(f"\nThe {self.posession} make the {100 - self.ls} yard field goal and score three points.\n")
+        print(
+        """
+                |                      |
+                |     ()               |
+                |                      |
+                |                      |
+                |______________________|
+                           |
+                           |
+                           |
+                           |
+                           |
+        """
+        )
+
         self.update_score('FG')
         self.score_board()
 
@@ -216,6 +222,15 @@ class Football():
         if prev_posession == self.posession:
             self.posession = next(alternator)
         return prev_posession, self.posession
+
+    def fumble(self):
+        pass
+
+    def sack(self):
+        pass
+
+    def interception(self):
+        pass
 
 if __name__ == "__main__":
     game = Football('49ers', 'Raiders')
